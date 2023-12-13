@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  {{ column.title }}
+{% endblock %}
+
+{% block content %}
+  <h3> Список транспорта: {{ cars_count }} ед.</h3>
+  <hr>
+  <div class="container">
+
+    <table class="table-car">
+      <thead>
+        <tr>
+          <th>Марка ТС</th>
+          <th>ГРЗ</th>
+          <th>Тип ТС</th>
+          <th>Автоколонна</th>
+        </tr>
+      </thead>
+      <tbody>
+
+
+      {% for car in cars %}
+        <tr>
+          <td>{{car.brand}}</td>
+          <td><a href="{% url "games:car_detail" car.id %}">{{ car.reg_mark }}</a></td>
+          <td>{{car.type_car}}</td>
+          <td>
+            {% if car.column %}
+              <a href="{% url 'games:column' car.column.slug %}">{{ car.column }}</a>
+            {% else %}
+              <i>=АК не присвоена=</i>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+
+      </tbody>
+    </table>
+
+{% comment %}
+    {% for car in games %}
+      <p>{{ car.type }} {{ car.brand }} {{ car.reg_mark }}</p>
+
+    {% if not forloop.last %}<hr>{% endif %}
+
+    {% endfor %}
+    {% endcomment %}
+  </div>
+{% endblock %}
