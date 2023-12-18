@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  Завершенные игры
+{% endblock %}
+
+{% block content %}
+  <h3>Последние завершенные игры.</h3>
+  <hr>
+  <div class="container">
+    {% for game in games %}
+      <p>{{ game.finish_date }} - {{ game.country_name }} - {{ game.creator }}</p>
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+  </div>
+{% endblock %}

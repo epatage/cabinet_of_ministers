@@ -9,7 +9,7 @@ urlpatterns = [
     path('auth/', include('users.urls')),
     path('auth/', include('django.contrib.auth.urls')),
 
-    # path('', include('games.urls', namespace='games')),
+    path('', include('games.urls', namespace='games')),
 ]
 
 # handler404 = 'core.views.page_not_found'
