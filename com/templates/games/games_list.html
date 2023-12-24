@@ -6,11 +6,14 @@
 {% endblock %}
 
 {% block content %}
-  <h3>Последние завершенные игры.</h3>
+  <h3>Список всех игр.</h3>
   <hr>
   <div class="container">
     {% for game in games %}
-      <p>{{ game.finish_date }} - {{ game.country_name }} - {{ game.creator }}</p>
+      <p>{{ game.finish_date }} -
+        <a href="{% url 'games:game_detail' game.id %}">{{ game.country_name }}</a>
+        - <a href="{% url 'users:profile' game.creator.id %}">{{ game.creator }}</a>
+      </p>
       {% if not forloop.last %}<hr>{% endif %}
     {% endfor %}
   </div>

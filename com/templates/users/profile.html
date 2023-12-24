@@ -2,35 +2,26 @@
 {% load static %}
 
 {% block title %}
-    Профайл пользователя {{ user.get_full_name }}
+    Профайл пользователя {{ user.username }}
 {% endblock %}
 
 {% block content %}
 
   <div class="container py-5">
-
-      <article>
-        <ul>
-          <li>
-            <b>Фамилия:</b> {{ user.last_name }}
-          </li>
-          <li>
-            <b>Имя:</b> {{ user.first_name }}
-          </li>
-          <li>
-            <b>Отчество:</b> {{ user.patronypic }}
-          </li>
-          <li>
-            <b>Должность:</b> {{ user.position }}
-          </li>
-          <li>
-            <b>Подразделение:</b> {{ user.department }}
-          </li>
-          <li>
-            <b>email:</b> {{ user.email }}
-          </li>
-        </ul>
-      </article>
+    <h4>Игры пользователя</h4>
+    {% for game in games %}
+      <p>
+        <a href="
+          {% if game.game_over %}
+            {% url 'games:game_detail' game.id %}
+          {% else %}
+            {% url 'games:active_game' game.id %}
+          {% endif %}
+        ">{{ game.country_name }}</a>
+        - {{ game.start_date }} -
+        {% if game.game_over %}Завершена{% else %}Не завершена{% endif %}
+      </p>
+    {% endfor %}
 
   </div>
 

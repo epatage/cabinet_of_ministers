@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-    ТС {{ car|truncatechars:30 }}
+    {{ game.country_name|truncatechars:50 }}
 {% endblock %}
 
 {% block content %}
@@ -10,21 +10,18 @@
         <aside class="col-12 col-md-3">
           <ul class="list-group list-group-flush">
             <li class="list-group-item">
-              Тип ТС: {{ car.type }}
+              Название государства - {{ game.country_name.label }} - {{ game.country_name }}
             </li>
             <li class="list-group-item">
-              Марка ТС: {{ car.brand }}
+              Создатель игры: {{ game.creator }}
             </li>
             <li class="list-group-item">
-              ГРЗ ТС: {{ car.reg_mark }}
+              Период {{ game.current_period }}
             </li>
             <!-- если у поста есть группа -->
 
             <li class="list-group-item">
-              Автоколонна: {{ car.column }}
-              <a href="{% url 'games:column' car.column.slug %}">
-                все ТС подразделения
-              </a>
+              Игра завершена: {{ game.game_over }}
             </li>
          {% comment %}
             <li class="list-group-item">
@@ -42,11 +39,11 @@
             </li>
           {% endcomment %}
 
-            <li class="list-group-item">
-              <a href="{% url 'games:car_edit' car.id %}">
-                Редактировать
-              </a>
-            </li>
+{#            <li class="list-group-item">#}
+{#              <a href="{% url 'games:car_edit' car.id %}">#}
+{#                Редактировать#}
+{#              </a>#}
+{#            </li>#}
 
 
           </ul>

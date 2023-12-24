@@ -28,11 +28,20 @@ def users_list(request):
 
 @login_required()
 def profile(request, user_id):
-    """Профайл пользователя."""
+    """
+    Профайл пользователя.
+
+    На странице выводятся все игры (активные и завершенные)
+    данного пользователя.
+    Можно посмотреть подробную информацию по завершенным играм и
+    продолжить незавершенную игру.
+    """
 
     user = get_object_or_404(User, pk=user_id)
+    games = user.games.filter(creator=user)
 
     context = {
         'user': user,
+        'games': games,
     }
     return render(request, 'users/profile.html', context)

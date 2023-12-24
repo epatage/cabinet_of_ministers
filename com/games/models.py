@@ -1,4 +1,6 @@
 import modulefinder
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from django.db import models
 from users.models import User
@@ -28,9 +30,9 @@ class Game(models.Model):
         null=False,
         blank=False,
     )
-    current_round = models.PositiveSmallIntegerField()
+    current_period = models.PositiveSmallIntegerField('Текущий период', default=1)
     game_over = models.BooleanField('Игра завершена', default=False)
-    country_name = models.CharField(max_length=50, unique=True)
+    country_name = models.CharField('Название государства', max_length=50, unique=True)
 
     class Meta:
         ordering = ['-finish_date']
@@ -39,15 +41,15 @@ class Game(models.Model):
         return f'{self.country_name}'
 
 
-class Round(models.Model):
-    """Модель раунда (игрового года) игры."""
+class Period(models.Model):
+    """Модель периода (игрового года)."""
 
     game = models.ForeignKey(
         'Game',
         blank=False,
         null=False,
         on_delete=models.CASCADE,
-        related_name='rounds',
+        related_name='periods',
         verbose_name='Годовой период',
         help_text='Годовой период',
     )
@@ -64,90 +66,81 @@ class Happiness(models.Model):
         'Индекс счастья',
         max_digits=4,
         decimal_places=2,
+        null=True,
+        blank=True,
     )
     gdp_per_soul = models.DecimalField(
         'ВВП на душу населения',
         max_digits=20,
         decimal_places=2,
+        null=True,
+        blank=True,
     )
-    joblessness = models.DecimalField('Безработица', max_digits=5, decimal_places=2)
-    birth_rate = models.DecimalField('Рождаемость', max_digits=5, decimal_places=2)
-    mortality_rate = models.DecimalField('Смертность', max_digits=5, decimal_places=2)
-    education = models.DecimalField('Образованность', max_digits=5, decimal_places=2)
-    welfare = models.DecimalField('Благосостояние', max_digits=5, decimal_places=2)
-    transport_accessibility = models.DecimalField('Транспортная доступность', max_digits=5, decimal_places=2)
-    goods_provision = models.DecimalField('Обеспеченность товарами', max_digits=5, decimal_places=2)
-    energy_provision = models.DecimalField('Обеспеченность энергоресурсами', max_digits=5, decimal_places=2)
-    safety = models.DecimalField('Безопасность', max_digits=5, decimal_places=2)
+    joblessness = models.DecimalField('Безработица', max_digits=5, decimal_places=2, null=True, blank=True)
+    birth_rate = models.DecimalField('Рождаемость', max_digits=5, decimal_places=2, null=True, blank=True)
+    mortality_rate = models.DecimalField('Смертность', max_digits=5, decimal_places=2, null=True, blank=True)
+    education = models.DecimalField('Образованность', max_digits=5, decimal_places=2, null=True, blank=True)
+    welfare = models.DecimalField('Благосостояние', max_digits=5, decimal_places=2, null=True, blank=True)
+    transport_accessibility = models.DecimalField('Транспортная доступность', max_digits=5, decimal_places=2, null=True, blank=True)
+    goods_provision = models.DecimalField('Обеспеченность товарами', max_digits=5, decimal_places=2, null=True, blank=True)
+    energy_provision = models.DecimalField('Обеспеченность энергоресурсами', max_digits=5, decimal_places=2, null=True, blank=True)
+    safety = models.DecimalField('Безопасность', max_digits=5, decimal_places=2, null=True, blank=True)
+    period = models.OneToOneField(
+        'Period',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='happiness',
+        verbose_name='Период',
+        help_text='Период', )
 
     def __str__(self):
-        return self.index
+        return f'{self.period.game.country_name} - {self.period.number} - {self.index}'
 
 
 class Safety(models.Model):
     """Модель безопасности и уверенности в завтрашнем дне."""
 
-    index = models.DecimalField('Индекс безопасности', max_digits=5, decimal_places=2)
-    environment = models.DecimalField('Окружающая среда', max_digits=5, decimal_places=2)
-    remaining_resources = models.PositiveIntegerField('Окружающая среда', default=1000000)
-    food_security = models.DecimalField('Продовольственная безопасность', max_digits=5, decimal_places=2)
-    food_reserve = models.DecimalField('Продовольственный резерв', max_digits=5, decimal_places=2)
-    food_quality = models.DecimalField('Качество продовольствия', max_digits=5, decimal_places=2)
-    national_debt = models.DecimalField('Государственный долг', max_digits=5, decimal_places=2)
+    index = models.DecimalField('Индекс безопасности', max_digits=5, decimal_places=2, null=True, blank=True)
+    environment = models.DecimalField('Окружающая среда', max_digits=5, decimal_places=2, null=True, blank=True)
+    remaining_resources = models.DecimalField('Остаток ресурсов', max_digits=12, decimal_places=2, null=True, blank=True)
+    food_security = models.DecimalField('Продовольственная безопасность', max_digits=5, decimal_places=2, null=True, blank=True)
+    food_reserve = models.DecimalField('Продовольственный резерв', max_digits=5, decimal_places=2, null=True, blank=True)
+    food_quality = models.DecimalField('Качество продовольствия', max_digits=5, decimal_places=2, null=True, blank=True)
+    national_debt = models.DecimalField('Государственный долг', max_digits=5, decimal_places=2, null=True, blank=True)
+    period = models.OneToOneField(
+        'Period',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='safety',
+        verbose_name='Период',
+        help_text='Период', )
 
     def __str__(self):
-        return self.index
+        return f'{self.period.game.country_name} - {self.period.number} - {self.index}'
 
 
 class Warehouse(models.Model):
     """Хранилище финансов и материальных запасов."""
 
-    round = models.ForeignKey(
-        'Round',
+    title = models.CharField('Название', max_length=50, null=False, blank=False)
+    amount = models.IntegerField('Количество', null=False, blank=True, default=0)
+    avg_price = models.DecimalField('Цена за единицу', max_digits=5, decimal_places=2, null=True, blank=True)
+    quality = models.DecimalField('Качество', max_digits=5, decimal_places=2, null=True, blank=True)
+    amount_finance = models.DecimalField('Финансовый параметр', max_digits=12, decimal_places=2, null=True, blank=True)
+    remaining_resources = models.PositiveIntegerField('Остаток ресурсов', default=1000000)
+    period = models.ForeignKey(
+        'Period',
         blank=False,
         null=False,
         on_delete=models.CASCADE,
         related_name='warehouses',
-        verbose_name='Хранилище',
-        help_text='Хранилище финансов и материальных запасов', )
-    finance = models.DecimalField('Финансы', max_digits=12, decimal_places=2)
-    natural_resources = models.ForeignKey(
-        'NaturalResources',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='natural_resources',
-        verbose_name='Природные ресурсы',
-        help_text='Природные ресурсы',
-    )
-    energy = models.ForeignKey(
-        'Energy',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='energy',
-        verbose_name='Энергоресурсы',
-        help_text='Энергоресурсы',
-    )
-    goods = models.ForeignKey(
-        'Goods',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='goods',
-        verbose_name='Товары',
-        help_text='Товары и оборудование',
-    )
-    food = models.ForeignKey(
-        'Food',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='food',
-        verbose_name='Продукты питания',
-        help_text='Продукты питания',
-    )
-    national_debt = models.DecimalField('Финансы', max_digits=12, decimal_places=2)
+        verbose_name='Период',
+        help_text='Период', )
+
+    def __str__(self):
+        return f'{self.period.game.country_name} - {self.period.number} - {self.title}'
 
 
 class BaseResources(models.Model):

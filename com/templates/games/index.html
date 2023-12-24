@@ -2,46 +2,34 @@
 {% load static %}
 
 {% block title %}
-  Список транспорта
+  Главная страница
 {% endblock %}
 
 {% block content %}
-  <h3> Список транспорта: {{ cars_count }} ед. </h3>
-  <a href="{% url "games:car_add" %}">Добавить ТС</a>
+  <div class="container ">
+    <form method="post">{% csrf_token %}
+      <div class="container">
+        {{ form.as_p }}
+      </div>
+
+      <div class="d-flex justify-content-end" >
+        <button type="submit" class="btn btn-primary">
+            Добавить
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <h3>Последние завершенные игры.</h3>
   <hr>
   <div class="container">
-
-    <table class="table-car" id="car-list">
-      <thead>
-        <tr>
-          <th>№ п/п</th>
-          <th>Марка ТС</th>
-          <th>ГРЗ</th>
-          <th>Тип ТС</th>
-          <th>Автоколонна</th>
-        </tr>
-      </thead>
-      <tbody>
-
-
-      {% for car in cars %}
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td>{{ car.brand }}</td>
-          <td><a href="{% url "games:car_detail" car.id %}">{{ car.reg_mark }}</a></td>
-          <td>{{ car.type_car }}</td>
-          <td>
-            {% if car.column %}
-              <a href="{% url 'games:column' car.column.slug %}">{{ car.column }}</a>
-            {% else %}
-              <i>=АК не присвоена=</i>
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-
-      </tbody>
-    </table>
-
+    {% for game in games %}
+      <p>
+        {{ game.finish_date }} -
+        <a href="{% if game.game_over %}{% url 'games:game_detail' game.id %}{% else %}{% url 'games:active_game' game.id %}{% endif %}">{{ game.country_name }}</a>
+        - <a href="{% url 'users:profile' game.creator.id %}">{{ game.creator }}</a>
+      </p>
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
   </div>
 {% endblock %}

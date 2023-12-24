@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Game, Round, Happiness, Safety, Warehouse, NaturalResources, Energy, Goods, Food
+from .models import Game, Period, Happiness, Safety, Warehouse, NaturalResources, Energy, Goods, Food
 
 
 @admin.register(Game)
@@ -9,7 +9,7 @@ class GameAdmin(admin.ModelAdmin):
         'creator',
         'start_date',
         'finish_date',
-        'current_round',
+        'current_period',
         'game_over',
         'country_name',
     )
@@ -17,3 +17,11 @@ class GameAdmin(admin.ModelAdmin):
     list_filter = ('start_date', 'finish_date', 'game_over')
     empty_value_display = '-'
     list_editable = ('country_name',)
+
+
+admin.site.register(Period)
+
+admin.site.register(Warehouse)
+
+admin.site.register(Happiness)
+admin.site.register(Safety)
