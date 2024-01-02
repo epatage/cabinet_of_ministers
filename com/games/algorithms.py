@@ -2,6 +2,7 @@
 Здесь собраны все константы и алгоритмы для вычислений при завершении
 игрового периода.
 """
+from games.models import MinistryFinance
 
 # Стартовый индекс счастья
 HAPPINESS_INDEX = 5.5
@@ -15,3 +16,21 @@ WAREHOUSE_OBJECTS = [
     'Товары и оборудование',
     'Продукты питания',
 ]
+
+
+def main(*args, **kwargs):
+    """
+    Производит полный расчет предоставленных данных от министерств,
+    заполняет все таблицы связанные с периодом,
+    создает новый период с заполненными стартовыми данными.
+    """
+
+    ...
+
+def create_tables(game) -> None:
+    print(120301293812371029)
+
+    for i in range(11):
+        MinistryFinance.objects.create(game=game.id, period=i)
+        print(i)
+

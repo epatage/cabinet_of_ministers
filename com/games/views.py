@@ -1,8 +1,11 @@
 from django.shortcuts import redirect, render, get_object_or_404
-from .models import Game, Period, Warehouse, Happiness, Safety
+import pandas as pd
+from .models import Game, Period, Warehouse, Happiness, Safety, MinistryNaturalResources, MinistryFinance
 from users.models import User
-from .forms import GameCreateForm, MainForm, HappynessForm
+from .forms import GameCreateForm, MinistryNaturalResourcesForm, MinistryEnergyForm, MinistryPopulationForm, \
+    MinistryIndustryForm, MinistryAgricultureForm, MinistryTransportForm, MinistryFinanceForm
 import games.algorithms as a
+from games.translation import translation_dict
 
 
 def index(request):
@@ -21,7 +24,7 @@ def index(request):
         game.creator = user
         game.save()
 
-        return redirect('games:active_game', game_id=game.id, username=user.username)
+        return redirect('games:active_game', game_id=game.id)
 
     # В выборку на главной странице должны попадать только завершенные игры
     games = Game.objects.filter(game_over=True)
@@ -70,37 +73,61 @@ def active_game(request, game_id):
     """Активная (не завершенная) игра."""
 
     game = get_object_or_404(Game, pk=game_id)
-    form = MainForm(request.POST)
-    form2 = HappynessForm(request.POST)
 
-    # Брать текущий период
+    # Получаем текущий период игры
+    cur_period = game.current_period
+
+    m_fin = MinistryFinance.objects.get(game_id=game_id, period=cur_period)
+
+
+    # Перечисляем все формы министерств
+    form_min_population = MinistryPopulationForm(request.POST or None)
+    form_min_natural_resource = MinistryNaturalResourcesForm(request.POST or None)
+    form_min_energy = MinistryEnergyForm(request.POST or None)
+    form_min_industry = MinistryIndustryForm(request.POST or None)
+    form_min_agriculture = MinistryAgricultureForm(request.POST or None)
+    form_min_transport = MinistryTransportForm(request.POST or None)
+    form_min_finance = MinistryFinanceForm(request.POST or None, instance=m_fin)
+
 
     if request.method == 'POST':
-        form = MainForm(request.POST)
-        form2 = HappynessForm(request.POST)
-        if form.is_valid():
+        # Создаем новый период с соответствующим порядковым номером
+        new_period = Period.objects.create(game_id=game_id, number=game.current_period + 1)
+
+        if form_min_finance.is_valid() and form_min_population.is_valid() and form_min_natural_resource.is_valid():
             # Производит операции по расчету следующего периода
-
-            # Увеличиваем порядковый номер текущего периода в игре
-            game.current_period += 1
-
-            # Создаем новый период с новым порядковым номером
-            new_period = Period.objects.create(game_id=game.id, number=game.current_period)
 
             # Создаем объекты хранилища для нового периода с заполненным полем title
             for title in a.WAREHOUSE_OBJECTS:
                 Warehouse.objects.create(period_id=new_period.pk, title=title)
 
-            happiness = Happiness.objects.create(period_id=new_period.pk)
-            safety = Safety.objects.create(period_id=new_period.pk)
+            # happiness = Happiness.objects.create(period_id=new_period.pk)
+            # safety = Safety.objects.create(happiness_id=happiness.pk)
 
+            form_min_finance.save()
 
+            # Увеличиваем порядковый номер текущего периода в игре
+            game.current_period += 1
 
             game.save()
 
-    print(game.current_period)
-    wh = game.periods.filter(number=game.current_period)
-    print('wh', wh)
+            return redirect('games:active_game', game_id=game.id)
+
+    # Берем все данные мин.финансов
+    min_finance_data = game.min_finance.all()
+    # Для заполнения таблицы создаем датафрейм
+    df = pd.DataFrame(min_finance_data.values())
+    # Транспонируем датафрейм для оптимальной визуализации данных
+    tr_df = df.transpose()
 
 
-    return render(request, 'games/active_game.html', {'game': game, 'form': form, 'form2': form2})
+
+    context = {
+        'game': game,
+        'df': tr_df,
+        'tr_dict': translation_dict,
+        'form_min_finance': form_min_finance,
+        'form_min_energy': form_min_energy,
+        'form_min_natural_resource': form_min_natural_resource
+    }
+    return render(request, 'games/active_game.html', context)
