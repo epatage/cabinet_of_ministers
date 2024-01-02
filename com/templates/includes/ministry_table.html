@@ -1,0 +1,28 @@
+{% load filters %}
+
+<table class="table table-striped-columns">
+  {% for index, row in df.iterrows %}
+    {% if index == 'period' %}
+      <thead>
+        <tr>
+          <th>{{ index|translator:tr_dict }}</th>
+          {% for cell in row %}
+            <th>{{ cell }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      {% endif %}
+      <tbody>
+      {% if not index == 'id' and not index == 'game_id' and not index == 'period' %}
+        <tr>
+        <td>{{ index|translator:tr_dict }}</td>
+          {% for cell in row %}
+            <td>
+              {{ cell }}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endif %}
+      </tbody>
+  {% endfor %}
+</table>

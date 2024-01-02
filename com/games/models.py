@@ -2,6 +2,8 @@ import modulefinder
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+import games.constants as const
+
 from django.db import models
 from users.models import User
 
@@ -200,8 +202,7 @@ class BaseMinistry(models.Model):
     """
     Базовая модель министерств.
 
-    Наследуется моделями министерств, где задействованы сотрудники
-    и оборудование.
+    Наследуется моделями всех министерств.
     """
 
     game = models.ForeignKey(
@@ -214,6 +215,28 @@ class BaseMinistry(models.Model):
         help_text='Игра',
     )
     period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
+
+    class Meta:
+        abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=['game', 'period'],
+                name='%(class)s_unique_game_period'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.game.country_name} - {self.period} - {self.__class__.__doc__}'
+
+
+class BaseWorkersMinistry(BaseMinistry):
+    """
+    Базовая модель министерств с сотрудниками.
+
+    Наследуется моделями министерств, где задействованы сотрудники
+    и оборудование.
+    """
+
     number_workers = models.IntegerField('Количество работников', null=False, blank=True, default=0, help_text='Количество работников')
     equipment_amount = models.IntegerField('Количество оборудования', null=False, blank=True, default=0)
     equipment_quality = models.DecimalField('Качество оборудования', max_digits=5, decimal_places=3, null=False, default=0)
@@ -222,20 +245,11 @@ class BaseMinistry(models.Model):
     salary_fund = models.DecimalField('Фонд заработной платы', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
     energy_provision = models.DecimalField('Энергоснабжение', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
 
-    class Meta:
+    class Meta(BaseMinistry.Meta):
         abstract = True
-        constraints = [
-            models.UniqueConstraint(
-                fields=['game', 'period'],
-                name='unique_%(app_label)s_%(class)s'
-            )
-        ]
-
-    def __str__(self):
-        return f'{self.game.country_name} - {self.period} - {self.__class__.__doc__}'
 
 
-class BaseProductionMinistry(BaseMinistry):
+class BaseProductionMinistry(BaseWorkersMinistry):
     """
     Базовая модель производственных министерств.
 
@@ -247,14 +261,17 @@ class BaseProductionMinistry(BaseMinistry):
 
     amount_products_produced = models.IntegerField('Количество произведенной продукции', null=False, blank=True, default=0)
 
-    class Meta(BaseMinistry.Meta):
+    class Meta(BaseWorkersMinistry.Meta):
         abstract = True
 
 
-class MinistryPopulation(models.Model):
+class MinistryPopulation(BaseMinistry):
     """Министерство народонаселения."""
 
     ...
+
+    class Meta(BaseMinistry.Meta):
+        ...
 
 
 class MinistryNaturalResources(BaseProductionMinistry):
@@ -262,11 +279,17 @@ class MinistryNaturalResources(BaseProductionMinistry):
 
     ...
 
+    class Meta(BaseProductionMinistry.Meta):
+        ...
+
 
 class MinistryEnergy(BaseProductionMinistry):
     """Министерство энергетики."""
 
     ...
+
+    class Meta(BaseProductionMinistry.Meta):
+        ...
 
 
 class MinistryIndustry(BaseProductionMinistry):
@@ -274,42 +297,47 @@ class MinistryIndustry(BaseProductionMinistry):
 
     ...
 
+    class Meta(BaseProductionMinistry.Meta):
+        ...
+
 
 class MinistryAgriculture(BaseProductionMinistry):
     """Министерство сельского хозяйства."""
 
     ...
 
+    class Meta(BaseProductionMinistry.Meta):
+        ...
 
-class MinistryTransport(BaseMinistry):
+
+class MinistryTransport(BaseWorkersMinistry):
     """Министерство транспорта."""
 
     ...
 
+    class Meta(BaseWorkersMinistry.Meta):
+        ...
 
-class MinistryFinance(models.Model):
+
+class MinistryFinance(BaseMinistry):
     """Министерство финансов."""
 
-    game = models.ForeignKey(
-        'Game',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='min_finance',
-        verbose_name='Игра',
-        help_text='Игра',
-    )
-    period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
     money = models.DecimalField(verbose_name='Финансы', max_digits=12, decimal_places=2, null=False, default=0)
 
-    class Meta:
+    class Meta(BaseMinistry.Meta):
         ordering = ['period']
-        constraints = [
-            models.UniqueConstraint(
-                fields=['game', 'period'],
-                name='unique_game_period'
-            )
-        ]
+
+
+"""Список объектов создаваемых при создании игры"""
+game_objects_list = [
+    MinistryPopulation,
+    MinistryNaturalResources,
+    MinistryEnergy,
+    MinistryIndustry,
+    MinistryAgriculture,
+    MinistryTransport,
+    MinistryFinance,
+]
 
 
 class Game(models.Model):
@@ -349,7 +377,11 @@ class Game(models.Model):
     def save(self, *args, **kwargs):
         created = self.pk is None
         super().save(*args, **kwargs)
-        if created:
-            for i in range(11):
-                MinistryFinance.objects.create(game=self, period=i)
 
+        if created:
+            # Количество периодов включает стартовый (нулевой) период
+            periods = const.periods + 1
+
+            for obj in game_objects_list:
+                for i in range(periods):
+                    obj.objects.create(game=self, period=i)

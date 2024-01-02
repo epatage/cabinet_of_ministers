@@ -5,6 +5,7 @@ from users.models import User
 from .forms import GameCreateForm, MinistryNaturalResourcesForm, MinistryEnergyForm, MinistryPopulationForm, \
     MinistryIndustryForm, MinistryAgricultureForm, MinistryTransportForm, MinistryFinanceForm
 import games.algorithms as a
+import games.constants as const
 from games.translation import translation_dict
 
 
@@ -92,14 +93,15 @@ def active_game(request, game_id):
 
     if request.method == 'POST':
         # Создаем новый период с соответствующим порядковым номером
-        new_period = Period.objects.create(game_id=game_id, number=game.current_period + 1)
+        # new_period = Period.objects.create(game_id=game_id, number=game.current_period + 1)
 
         if form_min_finance.is_valid() and form_min_population.is_valid() and form_min_natural_resource.is_valid():
             # Производит операции по расчету следующего периода
 
             # Создаем объекты хранилища для нового периода с заполненным полем title
             for title in a.WAREHOUSE_OBJECTS:
-                Warehouse.objects.create(period_id=new_period.pk, title=title)
+                # Warehouse.objects.create(period_id=new_period.pk, title=title)
+                ...
 
             # happiness = Happiness.objects.create(period_id=new_period.pk)
             # safety = Safety.objects.create(happiness_id=happiness.pk)
@@ -114,7 +116,7 @@ def active_game(request, game_id):
             return redirect('games:active_game', game_id=game.id)
 
     # Берем все данные мин.финансов
-    min_finance_data = game.min_finance.all()
+    min_finance_data = game.games_ministryfinance.all()
     # Для заполнения таблицы создаем датафрейм
     df = pd.DataFrame(min_finance_data.values())
     # Транспонируем датафрейм для оптимальной визуализации данных
