@@ -7,39 +7,80 @@ import games.constants as const
 from django.db import models
 from users.models import User
 
+from games.exceptions import ConstantException
 
 
+#
+# class Period(models.Model):
+#     """
+#     Модель периода (игрового года).
+#
+#     Сочетание объекта игры к которому относиться период
+#     и номера периода должно быть уникальным.
+#     """
+#
+#     game = models.ForeignKey(
+#         'Game',
+#         blank=False,
+#         null=False,
+#         on_delete=models.CASCADE,
+#         related_name='periods',
+#         verbose_name='Годовой период',
+#         help_text='Годовой период',
+#     )
+#     number = models.PositiveSmallIntegerField('Номер периода', default=0, null=False, blank=False)
+#
+#     # class Meta:
+#     #     constraints = [
+#     #         models.UniqueConstraint(
+#     #             fields=['game', 'number'],
+#     #             name='unique_game_number'
+#     #         )
+#     #     ]
+#
+#     def __str__(self):
+#         return f'{self.game.country_name} - {self.number}'
 
 
-class Period(models.Model):
+# class Welfare(models.Model):
+#     """Благосостояние населения."""
+#
+#     welfare_level = models.DecimalField('Уровень благосостояния', max_digits=5, decimal_places=3, null=True, blank=True)
+#     general = models.OneToOneField('General', verbose_name='Общие показатели', on_delete=models.CASCADE, null=False, blank=False)
+
+
+class Welfare(models.Model):
     """
-    Модель периода (игрового года).
+    Уровень благосостояния населения по группам.
 
-    Сочетание объекта игры к которому относиться период
-    и номера периода должно быть уникальным.
+    Объекты создаются при создании объекта General. Поле title заполняется
+    при создании объекта из списка групп населения.
     """
 
-    game = models.ForeignKey(
-        'Game',
+    title = models.CharField('Группа населения', max_length=50, null=False)
+    group_ratio = models.DecimalField('Доля группы населения в общем количестве', max_digits=5, decimal_places=4, null=True, blank=True)
+    average_income = models.DecimalField('Средний доход на человека', max_digits=7, decimal_places=2, null=True, blank=True)
+    general = models.ForeignKey(
+        'General',
         blank=False,
         null=False,
         on_delete=models.CASCADE,
-        related_name='periods',
-        verbose_name='Годовой период',
-        help_text='Годовой период',
+        related_name='welfares',
+        verbose_name='Благосостояние',
+        help_text='Благосостояние',
     )
-    number = models.PositiveSmallIntegerField('Номер периода', default=0, null=False, blank=False)
 
-    # class Meta:
-    #     constraints = [
-    #         models.UniqueConstraint(
-    #             fields=['game', 'number'],
-    #             name='unique_game_number'
-    #         )
-    #     ]
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['general', 'title'],
+                name='welfare_unique_general_title'
+            )
+        ]
 
-    def __str__(self):
-        return f'{self.game.country_name} - {self.number}'
+
+    # def __str__(self):
+    #     return f'{self.welfare.general.game.country_name} - {self.period.number} - {self.index}'
 
 
 class General(models.Model):
@@ -49,10 +90,20 @@ class General(models.Model):
     Отображены основные показатели, напрямую касающиеся населения
     по результатам решений за игровой период.
     """
-
+    game = models.ForeignKey(
+        'Game',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='generals',
+        verbose_name='Игра',
+        help_text='Игра',
+    )
+    period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
     population = models.PositiveIntegerField('Население', null=False, default=0)
     education = models.DecimalField('Уровень образования населения', max_digits=5, decimal_places=2, null=True, blank=True)
     healthcare = models.DecimalField('Уровень здравоохранения', max_digits=5, decimal_places=2, null=True, blank=True)
+    welfare_level = models.DecimalField('Уровень благосостояния', max_digits=5, decimal_places=3, null=True, blank=True)
     living_cost = models.DecimalField('Прожиточный минимум', max_digits=7, decimal_places=2, null=True, blank=True)
     birth_rate = models.DecimalField('Уровень рождаемости', max_digits=7, decimal_places=1, null=True, blank=True)
     mortality_rate = models.DecimalField('Уровень смертности', max_digits=7, decimal_places=1, null=True, blank=True)
@@ -63,38 +114,43 @@ class General(models.Model):
     gdp_per_soul = models.DecimalField('ВВП на душу населения (абсолютный показатель)', max_digits=7, decimal_places=3, null=True, blank=True)
     population_on_social_security = models.PositiveIntegerField('Количество населения на социальном обеспечении', null=True, blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['game', 'period'],
+                name='%(class)s_unique_game_period'
+            )
+        ]
 
-class Welfare(models.Model):
-    """Благосостояние населения."""
+    def save(self, *args, **kwargs):
+        created = self.pk is None
+        super().save(*args, **kwargs)
 
-    welfare_level = models.DecimalField('Уровень благосостояния', max_digits=5, decimal_places=3, null=True, blank=True)
-    general = models.OneToOneField('General', verbose_name='Общие показатели', on_delete=models.CASCADE, null=False, blank=False)
+        if created:
+            try:
+                # Берем список групп населения из модуля константы
+                groups: list = const.population_groups
+            except AttributeError as err:
+                # Сделать логирование ошибки <--
+                raise ConstantException(f'Ошибка {err}')
 
-
-class GroupIncomeLevel(models.Model):
-    """
-    Уровень дохода по группам населения.
-
-    Поле title заполняется при создании объекта из списка групп населения.
-    """
-
-    title = models.CharField('Группа населения', max_length=50, null=False)
-    group_share = models.DecimalField('Доля группы населения в общем количестве', max_digits=5, decimal_places=4, null=True, blank=True)
-    average_income = models.DecimalField('Средний доход на человека', max_digits=7, decimal_places=2, null=True, blank=True)
-    walfare = models.ForeignKey(
-        'Welfare',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='groups_population',
-        verbose_name='Благосостояние',
-        help_text='Благосостояние',
-    )
+            for group in groups:
+                Welfare.objects.create(general=self, title=group)
 
 
 class Happiness(models.Model):
     """Индекс счастья."""
 
+    game = models.ForeignKey(
+        'Game',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='happinesses',
+        verbose_name='Игра',
+        help_text='Игра',
+    )
+    period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
     index = models.DecimalField(
         'Индекс счастья',
         max_digits=4,
@@ -118,22 +174,32 @@ class Happiness(models.Model):
     goods_provision = models.DecimalField('Обеспеченность товарами', max_digits=5, decimal_places=2, null=True, blank=True)
     energy_provision = models.DecimalField('Обеспеченность энергоресурсами', max_digits=5, decimal_places=2, null=True, blank=True)
     safety = models.DecimalField('Безопасность', max_digits=5, decimal_places=2, null=True, blank=True)
-    period = models.OneToOneField(
-        'Period',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='happiness',
-        verbose_name='Период',
-        help_text='Период', )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['game', 'period'],
+                name='%(class)s_unique_game_period'
+            )
+        ]
 
     def __str__(self):
-        return f'{self.period.game.country_name} - {self.period.number} - {self.index}'
+        return f'{self.game.country_name} - {self.period} - {self.index}'
 
 
 class Safety(models.Model):
     """Безопасность и уверенности в завтрашнем дне."""
 
+    game = models.ForeignKey(
+        'Game',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='safeties',
+        verbose_name='Игра',
+        help_text='Игра',
+    )
+    period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
     index = models.DecimalField('Индекс безопасности', max_digits=5, decimal_places=2, null=True, blank=True)
     environment = models.DecimalField('Окружающая среда', max_digits=5, decimal_places=2, null=True, blank=True)
     remaining_resources = models.DecimalField('Остаток ресурсов', max_digits=12, decimal_places=2, null=True, blank=True)
@@ -141,17 +207,17 @@ class Safety(models.Model):
     food_reserve = models.DecimalField('Продовольственный резерв', max_digits=5, decimal_places=2, null=True, blank=True)
     food_quality = models.DecimalField('Качество продовольствия', max_digits=5, decimal_places=2, null=True, blank=True)
     national_debt = models.DecimalField('Государственный долг', max_digits=5, decimal_places=2, null=True, blank=True)
-    happiness = models.OneToOneField(
-        'Happiness',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='happiness_safety',
-        verbose_name='Безопасность',
-        help_text='Безопасность', )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['game', 'period'],
+                name='%(class)s_unique_game_period'
+            )
+        ]
 
     def __str__(self):
-        return f'{self.happiness.period.game.country_name} - {self.happiness.period.number} - {self.index}'
+        return f'{self.game.country_name} - {self.period} - {self.index}'
 
 
 class Workers(models.Model):
@@ -162,9 +228,9 @@ class Workers(models.Model):
     """
 
     title = models.CharField('Название профиля образования', max_length=50, null=False, blank=False)
-    workers_part = models.PositiveSmallIntegerField('Доля работников')
-    number_workers = models.PositiveIntegerField('Количество работников отрасли')
-    min_population = models.OneToOneField(
+    workers_part = models.PositiveSmallIntegerField('Доля работников', null=True, blank=True, default=0)
+    number_workers = models.PositiveIntegerField('Количество работников отрасли', null=True, default=0)
+    min_population = models.ForeignKey(
         'MinistryPopulation',
         blank=False,
         null=False,
@@ -173,29 +239,47 @@ class Workers(models.Model):
         verbose_name='Рабочие по группам образования',
         help_text='Рабочие по группам образования', )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['min_population', 'title'],
+                name='workers_unique_min_population_title'
+            )
+        ]
+
 
 class Warehouse(models.Model):
     """Хранилище финансов и материальных запасов."""
 
     # Переделывать!
 
+    game = models.ForeignKey(
+        'Game',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='warehouses',
+        verbose_name='Игра',
+        help_text='Игра',
+    )
+    period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
     title = models.CharField('Название', max_length=50, null=False, blank=False)
     amount = models.IntegerField('Количество', null=False, blank=True, default=0)
     avg_price = models.DecimalField('Цена за единицу', max_digits=5, decimal_places=2, null=True, blank=True)
     quality = models.DecimalField('Качество', max_digits=5, decimal_places=2, null=True, blank=True)
     amount_finance = models.DecimalField('Финансовый параметр', max_digits=12, decimal_places=2, null=True, blank=True)
     remaining_resources = models.PositiveIntegerField('Остаток ресурсов', default=1000000)
-    period = models.ForeignKey(
-        'Period',
-        blank=False,
-        null=False,
-        on_delete=models.CASCADE,
-        related_name='warehouses',
-        verbose_name='Период',
-        help_text='Период', )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['game', 'period'],
+                name='%(class)s_unique_game_period'
+            )
+        ]
 
     def __str__(self):
-        return f'{self.period.game.country_name} - {self.period.number} - {self.title}'
+        return f'{self.game.country_name} - {self.period} - {self.title}'
 
 
 class BaseMinistry(models.Model):
@@ -273,6 +357,21 @@ class MinistryPopulation(BaseMinistry):
     class Meta(BaseMinistry.Meta):
         ...
 
+    def save(self, *args, **kwargs):
+        created = self.pk is None
+        super().save(*args, **kwargs)
+
+        if created:
+            try:
+                # Берем список групп рабочих из модуля константы
+                groups: list = const.workers_groups
+            except AttributeError as err:
+                # Сделать логирование ошибки <--
+                raise ConstantException(f'Ошибка {err}')
+
+            for group in groups:
+                Workers.objects.create(min_population=self, title=group)
+
 
 class MinistryNaturalResources(BaseProductionMinistry):
     """Министерство природных ресурсов и экологии."""
@@ -330,6 +429,11 @@ class MinistryFinance(BaseMinistry):
 
 """Список объектов создаваемых при создании игры"""
 game_objects_list = [
+    General,
+    Happiness,
+    Safety,
+    Warehouse,
+
     MinistryPopulation,
     MinistryNaturalResources,
     MinistryEnergy,
@@ -364,12 +468,16 @@ class Game(models.Model):
         null=False,
         blank=False,
     )
-    current_period = models.PositiveSmallIntegerField('Текущий период', default=1)
+    current_period = models.PositiveSmallIntegerField('Текущий период', null=False, default=1)
     game_over = models.BooleanField('Игра завершена', default=False)
     country_name = models.CharField('Название государства', max_length=50, unique=True)
+    max_periods = models.IntegerField('Количество периодов в игре', null=False, default=10)
 
     class Meta:
         ordering = ['-finish_date']
+        indexes = [
+            models.Index(fields=['-finish_date'])
+        ]
 
     def __str__(self):
         return f'{self.country_name}'
@@ -379,8 +487,11 @@ class Game(models.Model):
         super().save(*args, **kwargs)
 
         if created:
-            # Количество периодов включает стартовый (нулевой) период
-            periods = const.periods + 1
+            try:
+                # Количество периодов включает стартовый (нулевой) период
+                periods: int = const.periods + 1
+            except AttributeError as err:
+                periods: int = self.max_periods + 1
 
             for obj in game_objects_list:
                 for i in range(periods):

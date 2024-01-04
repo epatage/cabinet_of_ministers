@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Game, Period, Happiness, Safety, Warehouse, MinistryNaturalResources, MinistryFinance
+from .models import Game, Happiness, Safety, Warehouse, MinistryNaturalResources, MinistryFinance
 
 
 @admin.register(Game)
@@ -19,7 +19,6 @@ class GameAdmin(admin.ModelAdmin):
     list_editable = ('country_name',)
 
 
-admin.site.register(Period)
 
 admin.site.register(Warehouse)
 

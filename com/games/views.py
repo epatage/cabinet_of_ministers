@@ -1,12 +1,12 @@
 from django.shortcuts import redirect, render, get_object_or_404
 import pandas as pd
-from .models import Game, Period, Warehouse, Happiness, Safety, MinistryNaturalResources, MinistryFinance
+from .models import Game, Warehouse, Happiness, Safety, MinistryNaturalResources, MinistryFinance
 from users.models import User
 from .forms import GameCreateForm, MinistryNaturalResourcesForm, MinistryEnergyForm, MinistryPopulationForm, \
     MinistryIndustryForm, MinistryAgricultureForm, MinistryTransportForm, MinistryFinanceForm
 import games.algorithms as a
 import games.constants as const
-from games.translation import translation_dict
+from .translation import translation_dict
 
 
 def index(request):
@@ -23,6 +23,11 @@ def index(request):
     if form.is_valid():
         game = form.save(commit=False)
         game.creator = user
+        try:
+            game.max_periods = const.periods
+        except AttributeError as err:
+            pass
+
         game.save()
 
         return redirect('games:active_game', game_id=game.id)
@@ -62,7 +67,7 @@ def game_start(request):
 
     if form.is_valid():
         game = form.save(commit=False)
-        game.save(creator=user)
+        game.save(creator=user, max_periods=const.periods)
 
         return redirect('games:active_game', game_id=game.id)
 
@@ -95,7 +100,7 @@ def active_game(request, game_id):
         # Создаем новый период с соответствующим порядковым номером
         # new_period = Period.objects.create(game_id=game_id, number=game.current_period + 1)
 
-        if form_min_finance.is_valid() and form_min_population.is_valid() and form_min_natural_resource.is_valid():
+        if form_min_finance.is_valid():
             # Производит операции по расчету следующего периода
 
             # Создаем объекты хранилища для нового периода с заполненным полем title

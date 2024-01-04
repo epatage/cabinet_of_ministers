@@ -1,0 +1,2 @@
+class ConstantException(Exception):
+    pass

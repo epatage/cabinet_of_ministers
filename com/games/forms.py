@@ -1,5 +1,5 @@
 from django import forms
-from .models import Game, Period, Happiness, MinistryNaturalResources, MinistryEnergy, MinistryIndustry, \
+from .models import Game, Happiness, MinistryNaturalResources, MinistryEnergy, MinistryIndustry, \
     MinistryAgriculture, MinistryTransport, MinistryFinance, MinistryPopulation
 
 
