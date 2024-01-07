@@ -227,7 +227,7 @@ class Workers(models.Model):
     Распределение рабочих по специальностям.
     """
 
-    title = models.CharField('Название профиля образования', max_length=50, null=False, blank=False)
+    title = models.CharField('Название профиля образования', max_length=50, null=False)
     workers_part = models.PositiveSmallIntegerField('Доля работников', null=True, blank=True, default=0)
     number_workers = models.PositiveIntegerField('Количество работников отрасли', null=True, default=0)
     min_population = models.ForeignKey(
@@ -246,6 +246,9 @@ class Workers(models.Model):
                 name='workers_unique_min_population_title'
             )
         ]
+
+    def __str__(self):
+        return f'{self.min_population.game.country_name} - {self.min_population.period} - {self.title}'
 
 
 class Warehouse(models.Model):
@@ -273,8 +276,8 @@ class Warehouse(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['game', 'period'],
-                name='%(class)s_unique_game_period'
+                fields=['game', 'period', 'title'],
+                name='%(class)s_unique_game_period_title'
             )
         ]
 
@@ -327,7 +330,7 @@ class BaseWorkersMinistry(BaseMinistry):
     # Необходимо проверить как работает при искусственном увеличении себестоимости до предельных размеров
     equipment_price = models.DecimalField('Цена оборудования', max_digits=8, decimal_places=3, null=False, default=0)
     salary_fund = models.DecimalField('Фонд заработной платы', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
-    energy_provision = models.DecimalField('Энергоснабжение', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
+    energy = models.DecimalField('Энергоснабжение', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
 
     class Meta(BaseMinistry.Meta):
         abstract = True
@@ -369,6 +372,7 @@ class MinistryPopulation(BaseMinistry):
                 # Сделать логирование ошибки <--
                 raise ConstantException(f'Ошибка {err}')
 
+            # Создаем таблицы для распределения обучения рабочих
             for group in groups:
                 Workers.objects.create(min_population=self, title=group)
 
@@ -376,7 +380,12 @@ class MinistryPopulation(BaseMinistry):
 class MinistryNaturalResources(BaseProductionMinistry):
     """Министерство природных ресурсов и экологии."""
 
-    ...
+    remaining_resources = models.IntegerField('Остаток ресурсов', null=False, default=1000000, help_text='Остаток ресурсов')
+    total_env_damage = models.DecimalField('Суммарный ущерб ОС', max_digits=6, decimal_places=4, help_text='Суммарный ущерб окружающей среде от всех источников')
+    finance_contribution_damage_reduction = models.DecimalField('Финансовый вклад в снижение вреда ОС', max_digits=10, decimal_places=2, null=True, blank=True, default=0, help_text='Финансовый вклад в снижение вреда ОС')
+    production_contribution_damage_reduction = models.IntegerField('Товарный вклад в снижение вреда ОС', null=True, blank=True, default=0, help_text='Товарный вклад в снижение вреда ОС')
+    damage_env_reduction = models.DecimalField('Снижение ущерба ОС', max_digits=6, decimal_places=4, null=True, default=0, help_text='Снижение ущерба ОС')
+    env_changing = models.DecimalField('Изменения состояния ОС', max_digits=6, decimal_places=4, null=True, default=0)
 
     class Meta(BaseProductionMinistry.Meta):
         ...

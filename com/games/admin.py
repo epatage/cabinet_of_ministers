@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Game, Happiness, Safety, Warehouse, MinistryNaturalResources, MinistryFinance
+from .models import Game, Happiness, Safety, Warehouse, MinistryNaturalResources, MinistryFinance, MinistryPopulation, \
+    Workers
 
 
 @admin.register(Game)
@@ -24,5 +25,7 @@ admin.site.register(Warehouse)
 
 admin.site.register(Happiness)
 admin.site.register(Safety)
+admin.site.register(MinistryPopulation)
+admin.site.register(Workers)
 admin.site.register(MinistryNaturalResources)
 admin.site.register(MinistryFinance)

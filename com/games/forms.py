@@ -1,6 +1,8 @@
 from django import forms
+from django.forms import modelformset_factory
+
 from .models import Game, Happiness, MinistryNaturalResources, MinistryEnergy, MinistryIndustry, \
-    MinistryAgriculture, MinistryTransport, MinistryFinance, MinistryPopulation
+    MinistryAgriculture, MinistryTransport, MinistryFinance, MinistryPopulation, Workers
 
 
 class GameCreateForm(forms.ModelForm):
@@ -22,13 +24,14 @@ class BaseMinistryForm(forms.ModelForm):
     """
 
     class Meta:
-        # fields = '__all__'
-        fields = (
-            'number_workers',
-            'equipment_amount',
-            'salary_fund',
-            'energy_provision',
-        )
+        fields = '__all__'
+        exclude = ('period', 'game')
+        # fields = (
+        #     'number_workers',
+        #     'equipment_amount',
+        #     'salary_fund',
+        #     'energy_provision',
+        # )
 
 
 class MinistryPopulationForm(forms.ModelForm):
@@ -41,7 +44,7 @@ class MinistryPopulationForm(forms.ModelForm):
     class Meta:
         model = MinistryPopulation
         fields = '__all__'
-        exclude = ('period',)
+        exclude = ('period', 'game')
 
 
 class MinistryNaturalResourcesForm(BaseMinistryForm):
@@ -54,6 +57,12 @@ class MinistryNaturalResourcesForm(BaseMinistryForm):
 
     class Meta(BaseMinistryForm.Meta):
         model = MinistryNaturalResources
+        fields = (
+            'number_workers',
+            'salary_fund',
+            'energy',
+            'production_contribution_damage_reduction',
+        )
 
 
 class MinistryEnergyForm(BaseMinistryForm):
@@ -115,3 +124,43 @@ class MinistryFinanceForm(forms.ModelForm):
         model = MinistryFinance
         fields = '__all__'
         exclude = ('game', 'period')
+
+
+class WorkersForm(forms.ModelForm):
+    """
+    Форма распределения рабочих для обучения.
+
+    Процентное отношение рабочих для обучения по специальностям.
+    Передается министерством народонаселения.
+    Используется при POST-запросе.
+    """
+    class Meta:
+        model = Workers
+        fields = ('workers_part',)
+
+
+class WorkersGetForm(WorkersForm):
+    """
+    Форма GET-запроса распределения рабочих для обучения.
+
+    Необходима для вывода полей title в качестве обозначений полей формы при
+    GET-запросе.
+    """
+    class Meta(WorkersForm.Meta):
+        fields = ('title',) + WorkersForm.Meta.fields
+
+
+"""FormSet POST-запроса для распределения обучения рабочих."""
+WorkersFormSet = modelformset_factory(
+    Workers,
+    form=WorkersForm,
+    extra=0,
+)
+
+
+"""FormSet GET-запроса для распределения обучения рабочих."""
+WorkersGetFormSet = modelformset_factory(
+    Workers,
+    form=WorkersGetForm,
+    extra=0,
+)

@@ -33,24 +33,76 @@
                     <h4>Данные на конец {{ game.current_period|add:"-1" }} периода</h4>
 
                     <h5>{{ df.doc }}</h5>
-                    {% include "includes/ministry_table.html" with df=df %}
+                    {% include "includes/ministry_table.html" with df=m_fin_df %}
+                  </div>
+
+                  <br>
+                  <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        Добавить
+                    </button>
                   </div>
 
                   <br>
                   <div>
-                    <h4>Министерство финансов</h4>
-                    {% include "includes/ministry_form.html" with form=form_min_finance %}
+                    <h4>Министерство народонаселения</h4>
+                    {% include "includes/ministry_form.html" with form=form_m_populat %}
                   </div>
+
+                  <div class="container form-control">
+                  {{ formset_workers.management_form }}
+                    {{ formset_workers.non_form_errors.as_ul }}
+                    {% for form in formset_workers%}
+                      <p>
+                        <!-- Передает id форм для формсета при POST-запросе -->
+                        {% for hidden in form.hidden_fields %}
+                          {{ hidden }}
+                        {% endfor %}
+
+                        {% for field in form %}
+                          {{ field.errors }}
+                          <!-- Первое поле "title" выводиться как не редактируемый текст -->
+                          {% if forloop.first %}
+                          {{ field.value }}
+                          {% else %}
+                          {{ field }}
+                          {% endif %}
+                        {% endfor %}
+                      </p>
+                    {% endfor %}
+                  </div>
+
                   <br>
                   <div>
                     <h4>Министерство природных ресурсов</h4>
-                    {% include "includes/ministry_form.html" with form=form_min_natural_resource %}
+                    {% include "includes/ministry_form.html" with form=form_m_nat_res %}
                   </div>
                   <br>
                   <div>
                     <h4>Министерство энергетики</h4>
-                    {% include "includes/ministry_form.html" with form=form_min_energy %}
+                    {% include "includes/ministry_form.html" with form=form_m_energy %}
                   </div>
+                  <br>
+                  <div>
+                    <h4>Министерство промышленности</h4>
+                    {% include "includes/ministry_form.html" with form=form_m_industry %}
+                  </div>
+                  <br>
+                  <div>
+                    <h4>Министерство сельского хозяйства</h4>
+                    {% include "includes/ministry_form.html" with form=form_m_agro %}
+                  </div>
+                  <br>
+                  <div>
+                    <h4>Министерство транспорта</h4>
+                    {% include "includes/ministry_form.html" with form=form_m_trans %}
+                  </div>
+                  <br>
+                  <div>
+                    <h4>Министерство финансов</h4>
+                    {% include "includes/ministry_form.html" with form=form_m_fin %}
+                  </div>
+                  <br>
 
 
                   <div class="d-flex justify-content-end">
