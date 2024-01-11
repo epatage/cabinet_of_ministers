@@ -44,32 +44,34 @@
                   </div>
 
                   <br>
-                  <div>
+                  <div >
                     <h4>Министерство народонаселения</h4>
                     {% include "includes/ministry_form.html" with form=form_m_populat %}
-                  </div>
 
-                  <div class="container form-control">
-                  {{ formset_workers.management_form }}
-                    {{ formset_workers.non_form_errors.as_ul }}
-                    {% for form in formset_workers%}
-                      <p>
-                        <!-- Передает id форм для формсета при POST-запросе -->
-                        {% for hidden in form.hidden_fields %}
-                          {{ hidden }}
-                        {% endfor %}
+                    <br>
+                    <div class="form-control">
+                      <h5>Образование для рабочих</h5>
+                      {{ formset_workers.management_form }}
+                        {{ formset_workers.non_form_errors.as_ul }}
+                        {% for form in formset_workers%}
+                          <p>
+                            <!-- Передает id форм для формсета при POST-запросе -->
+                            {% for hidden in form.hidden_fields %}
+                              {{ hidden }}
+                            {% endfor %}
 
-                        {% for field in form %}
-                          {{ field.errors }}
-                          <!-- Первое поле "title" выводиться как не редактируемый текст -->
-                          {% if forloop.first %}
-                          {{ field.value }}
-                          {% else %}
-                          {{ field }}
-                          {% endif %}
+                            {% for field in form %}
+                              {{ field.errors }}
+                              <!-- Первое поле "title" выводиться как не редактируемый текст -->
+                              {% if forloop.first %}
+                              {{ field.value }}
+                              {% else %}
+                              {{ field }}
+                              {% endif %}
+                            {% endfor %}
+                          </p>
                         {% endfor %}
-                      </p>
-                    {% endfor %}
+                    </div>
                   </div>
 
                   <br>

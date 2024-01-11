@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models import Game, Happiness, Safety, Warehouse, MinistryNaturalResources, MinistryFinance, MinistryPopulation, \
-    Workers
+from .models import Game, Happiness, Safety, Storage, MinistryNaturalResources, MinistryFinance, MinistryPopulation, \
+    Workers, MinistryEnergy, MinistryTransport, MinistryIndustry, MinistryAgriculture
 
 
 @admin.register(Game)
@@ -21,11 +21,17 @@ class GameAdmin(admin.ModelAdmin):
 
 
 
-admin.site.register(Warehouse)
+admin.site.register(Storage)
 
 admin.site.register(Happiness)
 admin.site.register(Safety)
-admin.site.register(MinistryPopulation)
+
 admin.site.register(Workers)
+
+admin.site.register(MinistryPopulation)
 admin.site.register(MinistryNaturalResources)
+admin.site.register(MinistryEnergy)
+admin.site.register(MinistryIndustry)
+admin.site.register(MinistryAgriculture)
+admin.site.register(MinistryTransport)
 admin.site.register(MinistryFinance)

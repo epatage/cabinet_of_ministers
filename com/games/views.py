@@ -1,7 +1,7 @@
 from django.forms import modelformset_factory
 from django.shortcuts import redirect, render, get_object_or_404
 import pandas as pd
-from .models import Game, Warehouse, Happiness, Safety, MinistryNaturalResources, MinistryFinance, MinistryPopulation, \
+from .models import Game, Storage, Happiness, Safety, MinistryNaturalResources, MinistryFinance, MinistryPopulation, \
     MinistryEnergy, MinistryIndustry, MinistryAgriculture, MinistryTransport, Workers
 from users.models import User
 from .forms import GameCreateForm, MinistryNaturalResourcesForm, MinistryEnergyForm, MinistryPopulationForm, \

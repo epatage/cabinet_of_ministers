@@ -251,7 +251,7 @@ class Workers(models.Model):
         return f'{self.min_population.game.country_name} - {self.min_population.period} - {self.title}'
 
 
-class Warehouse(models.Model):
+class Storage(models.Model):
     """Хранилище финансов и материальных запасов."""
 
     # Переделывать!
@@ -316,9 +316,26 @@ class BaseMinistry(models.Model):
         return f'{self.game.country_name} - {self.period} - {self.__class__.__doc__}'
 
 
-class BaseWorkersMinistry(BaseMinistry):
+class ExtendedBaseMinistry(models.Model):
     """
-    Базовая модель министерств с сотрудниками.
+    Расширенная базовая модель министерств.
+
+    Наследуется моделями министерств с затратами финансов и товаров.
+    """
+
+    env_damage = models.DecimalField('Нанесенный вред ОС', max_digits=5, decimal_places=3, null=False, default=0)
+    total_finance_provision = models.DecimalField('Суммарное финансовое обеспечение', max_digits=12, decimal_places=2, null=True, blank=True, default=0, help_text='Суммарное финансовое обеспечение')
+    total_costs = models.DecimalField('Суммарные финансовые затраты', max_digits=12, decimal_places=2, null=True, default=0)
+    total_goods_provision = models.IntegerField('Суммарное обеспечение товарами', null=True, default=0, help_text='Суммарное обеспечение товарами')
+    total_equipment_costs = models.IntegerField('Суммарные товарные вложения', null=True, default=0)
+
+    class Meta:
+        abstract = True
+
+
+class BaseWorkersEquipment(models.Model):
+    """
+    Базовая модель министерств с сотрудниками и оборудованием.
 
     Наследуется моделями министерств, где задействованы сотрудники
     и оборудование.
@@ -328,15 +345,77 @@ class BaseWorkersMinistry(BaseMinistry):
     equipment_amount = models.IntegerField('Количество оборудования', null=False, blank=True, default=0)
     equipment_quality = models.DecimalField('Качество оборудования', max_digits=5, decimal_places=3, null=False, default=0)
     # Необходимо проверить как работает при искусственном увеличении себестоимости до предельных размеров
-    equipment_price = models.DecimalField('Цена оборудования', max_digits=8, decimal_places=3, null=False, default=0)
-    salary_fund = models.DecimalField('Фонд заработной платы', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
-    energy = models.DecimalField('Энергоснабжение', max_digits=10, decimal_places=2, null=False, blank=True, default=0)
+    equipment_price = models.DecimalField('Цена оборудования', max_digits=12, decimal_places=2, null=False, default=0)
+    salary_fund = models.DecimalField('Фонд заработной платы', max_digits=12, decimal_places=2, null=False, blank=True, default=0)
+    equipment_wear = models.IntegerField('Износ оборудования', null=True, default=0)
+    equipment_purchase = models.IntegerField('Приобретение оборудования', null=True, blank=True, default=0, help_text='Приобретение оборудования')
+    equipment_costs = models.DecimalField('Финансовые затраты на приобретение оборудования', max_digits=10, decimal_places=2, null=True, default=0)
 
-    class Meta(BaseMinistry.Meta):
+    class Meta:
         abstract = True
 
 
-class BaseProductionMinistry(BaseWorkersMinistry):
+class BaseEnergy(models.Model):
+    """
+    Базовая модель министерств расходующих энергоресурсы.
+
+    Наследуется моделями министерств расходующих энергоресурсы.
+    """
+
+    energy_provision = models.IntegerField('Обеспечение энергоресурсами', null=True, blank=True, default=0, help_text='Обеспечение энергоресурсами')
+    energy_consumption = models.IntegerField('Потребление энергоресурсов', null=True, blank=True, default=0)
+    energy_costs = models.DecimalField('Финансовые затраты на приобретение энергоресурсов', max_digits=12, decimal_places=2, null=True, default=0)
+
+    class Meta:
+        abstract = True
+
+
+class BaseNaturalResource(models.Model):
+    """
+    Базовая модель министерств расходующих природные ресурсы.
+
+    Наследуется моделями министерств расходующих природные ресурсы.
+    """
+
+    natural_resource_provision = models.IntegerField('Обеспечение природными ресурсами', null=True, blank=True, default=0, help_text='Обеспечение природными ресурсами')
+    natural_resource_consumption = models.IntegerField('Потребление природных ресурсов', null=True, blank=True, default=0)
+    natural_resource_costs = models.DecimalField('Финансовые затраты на приобретение природных ресурсов', max_digits=12, decimal_places=2, null=True, default=0)
+
+    class Meta:
+        abstract = True
+
+
+class BaseAgro(models.Model):
+    """
+    Базовая модель министерств расходующих сельскохозяйственную продукцию.
+
+    Наследуется моделями министерств расходующих сельскохозяйственную продукцию.
+    """
+
+    agro_provision = models.IntegerField('Обеспечение сельскохозяйственной продукцией', null=True, blank=True, default=0, help_text='Обеспечение сельскохозяйственной продукцией')
+    agro_consumption = models.IntegerField('Потребление сельскохозяйственной продукцией', null=True, blank=True, default=0)
+    agro_costs = models.DecimalField('Финансовые затраты на приобретение сельскохозяйственной продукции', max_digits=12, decimal_places=2, null=True, default=0)
+
+    class Meta:
+        abstract = True
+
+
+class BaseGoods(models.Model):
+    """
+    Базовая модель министерств расходующих товары.
+
+    Наследуется моделями министерств расходующих товары.
+    """
+
+    goods_provision = models.IntegerField('Обеспечение товарами', null=True, blank=True, default=0, help_text='Обеспечение товарами')
+    goods_consumption = models.IntegerField('Потребление товаров', null=True, blank=True, default=0)
+    goods_costs = models.DecimalField('Финансовые затраты на приобретение товаров', max_digits=12, decimal_places=2, null=True, default=0)
+
+    class Meta:
+        abstract = True
+
+
+class BaseProduction(models.Model):
     """
     Базовая модель производственных министерств.
 
@@ -344,18 +423,32 @@ class BaseProductionMinistry(BaseWorkersMinistry):
     продукции.
     """
 
-    # Поля производства продукции
+    products_produced = models.IntegerField('Количество произведенной продукции', null=True, blank=True, default=0)
+    cost_price = models.DecimalField('Себестоимость', max_digits=12, decimal_places=2, null=True, default=0)
+    stake_gdp = models.DecimalField('Доля в ВВП', max_digits=5, decimal_places=3, null=True, default=0)
 
-    amount_products_produced = models.IntegerField('Количество произведенной продукции', null=False, blank=True, default=0)
-
-    class Meta(BaseWorkersMinistry.Meta):
+    class Meta:
         abstract = True
 
 
-class MinistryPopulation(BaseMinistry):
+class MinistryPopulation(
+    BaseMinistry,
+    BaseAgro,
+    BaseGoods,
+    BaseEnergy,
+    ExtendedBaseMinistry,
+):
     """Министерство народонаселения."""
 
-    ...
+    social_benefits = models.DecimalField('Социальное пособие', max_digits=12, decimal_places=2, null=True, blank=True, default=0, help_text='Социальное пособие')
+    education_decrease = models.DecimalField('Снижение уровня образования', max_digits=6, decimal_places=4, null=True, default=0)
+    education_goods_contribution = models.IntegerField('Вклад товаров в образование', null=True, blank=True, default=0, help_text='Вклад товаров в образование')
+    education_finance_contribution = models.DecimalField('Финансовые затраты на образование', max_digits=12, decimal_places=2, null=True, default=0)
+    education_improving = models.DecimalField('Повышение уровня образования', max_digits=6, decimal_places=4, null=True, default=0)
+    healthcare_decrease = models.DecimalField('Снижение уровня здравоохранения', max_digits=6, decimal_places=4, null=True, default=0)
+    healthcare_goods_contribution = models.IntegerField('Вклад товаров в здравоохранения', null=True, blank=True, default=0, help_text='Вклад товаров в здравоохранения')
+    healthcare_finance_contribution = models.DecimalField('Финансовые затраты на здравоохранения', max_digits=12, decimal_places=2, null=True, default=0)
+    healthcare_improving = models.DecimalField('Повышение уровня здравоохранения', max_digits=6, decimal_places=4, null=True, default=0)
 
     class Meta(BaseMinistry.Meta):
         ...
@@ -377,53 +470,109 @@ class MinistryPopulation(BaseMinistry):
                 Workers.objects.create(min_population=self, title=group)
 
 
-class MinistryNaturalResources(BaseProductionMinistry):
+class MinistryNaturalResources(
+    BaseMinistry,
+    ExtendedBaseMinistry,
+    BaseEnergy,
+    BaseWorkersEquipment,
+    BaseProduction,
+):
     """Министерство природных ресурсов и экологии."""
 
-    remaining_resources = models.IntegerField('Остаток ресурсов', null=False, default=1000000, help_text='Остаток ресурсов')
-    total_env_damage = models.DecimalField('Суммарный ущерб ОС', max_digits=6, decimal_places=4, help_text='Суммарный ущерб окружающей среде от всех источников')
-    finance_contribution_damage_reduction = models.DecimalField('Финансовый вклад в снижение вреда ОС', max_digits=10, decimal_places=2, null=True, blank=True, default=0, help_text='Финансовый вклад в снижение вреда ОС')
-    production_contribution_damage_reduction = models.IntegerField('Товарный вклад в снижение вреда ОС', null=True, blank=True, default=0, help_text='Товарный вклад в снижение вреда ОС')
+    resources_remaining = models.IntegerField('Остаток ресурсов', null=False, default=1000000, help_text='Остаток ресурсов')
+    total_env_damage = models.DecimalField('Суммарный ущерб ОС от всех источников', max_digits=6, decimal_places=4, null=True, help_text='Суммарный ущерб окружающей среде от всех источников')
+    damage_reduction_goods_contribution = models.IntegerField('Товарный вклад в снижение вреда ОС', null=True, blank=True, default=0, help_text='Товарный вклад в снижение вреда ОС')
+    damage_reduction_finance_contribution = models.DecimalField('Финансовый вклад в снижение вреда ОС', max_digits=12, decimal_places=2, null=True, blank=True, default=0, help_text='Финансовый вклад в снижение вреда ОС')
     damage_env_reduction = models.DecimalField('Снижение ущерба ОС', max_digits=6, decimal_places=4, null=True, default=0, help_text='Снижение ущерба ОС')
     env_changing = models.DecimalField('Изменения состояния ОС', max_digits=6, decimal_places=4, null=True, default=0)
 
-    class Meta(BaseProductionMinistry.Meta):
+    class Meta(BaseMinistry.Meta):
         ...
 
 
-class MinistryEnergy(BaseProductionMinistry):
+class MinistryEnergy(
+    BaseMinistry,
+    ExtendedBaseMinistry,
+    BaseWorkersEquipment,
+    BaseEnergy,
+    BaseNaturalResource,
+    BaseProduction,
+):
     """Министерство энергетики."""
 
-    ...
+    energy_efficiency_reduce = models.DecimalField('Снижение энергоэффективности', max_digits=5, decimal_places=3, null=True)
+    energy_efficiency_goods_contribution = models.IntegerField('Товарный вклад в энергоэффективность', null=True, blank=True, default=0, help_text='Товарный вклад в энергоэффективность')
+    energy_efficiency_finance_contribution = models.DecimalField('Финансовый вклад в энергоэффективность', max_digits=10, decimal_places=2, null=True, blank=True, default=0, help_text='Финансовый вклад в энергоэффективность')
+    energy_efficiency_increase = models.DecimalField('Увеличение энергоэффективности', max_digits=5, decimal_places=3, null=True, default=0)
 
-    class Meta(BaseProductionMinistry.Meta):
+    class Meta(BaseMinistry.Meta):
         ...
 
 
-class MinistryIndustry(BaseProductionMinistry):
+class MinistryIndustry(
+    BaseMinistry,
+    ExtendedBaseMinistry,
+    BaseWorkersEquipment,
+    BaseEnergy,
+    BaseNaturalResource,
+    BaseProduction,
+):
     """Министерство промышленности."""
 
-    ...
+    quality_manufactured_goods = models.DecimalField('Уровень качества производимых товаров', max_digits=6, decimal_places=4, null=True, help_text='Уровень качества производимых товаров')
+    quality_reduce = models.DecimalField('Снижение качества производимых товаров', max_digits=6, decimal_places=4, null=True)
+    quality_goods_contribution = models.IntegerField('Вклад товаров в увеличение качества производимых товаров', null=True, blank=True, default=0, help_text='Вклад товаров в увеличение качества производимых товаров')
+    quality_finance_contribution = models.DecimalField('Финансовый вклад в увеличение качества производимых товаров', max_digits=12, decimal_places=2, null=True, default=0, help_text='Финансовый вклад в увеличение качества производимых товаров')
+    quality_increase = models.DecimalField('Увеличение качества производимых товаров', max_digits=6, decimal_places=4, null=True, default=0)
+    wasteless_production_level = models.DecimalField('Уровень безотходного производства', max_digits=6, decimal_places=4, null=True, help_text='Уровень безотходного производства')
+    wasteless_production_reduce = models.DecimalField('Снижение уровня безотходного производства', max_digits=6, decimal_places=4, null=True)
+    wasteless_production_goods_contribution = models.IntegerField('Вклад товаров в увеличение уровня безотходного производства', null=True, blank=True, default=0, help_text='Вклад товаров в увеличение уровня безотходного производства')
+    wasteless_production_finance_contribution = models.DecimalField('Финансовый вклад в увеличение уровня безотходного производства', max_digits=12, decimal_places=2, null=True, default=0)
+    wasteless_production_increase = models.DecimalField('Увеличение уровня безотходного производства', max_digits=6, decimal_places=4, null=True, default=0)
 
-    class Meta(BaseProductionMinistry.Meta):
+    class Meta(BaseMinistry.Meta):
         ...
 
 
-class MinistryAgriculture(BaseProductionMinistry):
+class MinistryAgriculture(
+    BaseMinistry,
+    ExtendedBaseMinistry,
+    BaseWorkersEquipment,
+    BaseEnergy,
+    BaseProduction,
+):
     """Министерство сельского хозяйства."""
 
-    ...
+    quality_manufactured_food = models.DecimalField('Уровень качества производимых продуктов', max_digits=6, decimal_places=4, null=True, help_text='Уровень качества производимых продуктов')
+    quality_reduce = models.DecimalField('Снижение качества производимых продуктов', max_digits=6, decimal_places=4, null=True)
+    quality_goods_contribution = models.IntegerField('Вклад товаров в увеличение качества производимых продуктов', null=True, blank=True, default=0, help_text='Вклад товаров в увеличение качества производимых продуктов')
+    quality_finance_contribution = models.DecimalField('Финансовый вклад в увеличение качества производимых продуктов', max_digits=12, decimal_places=2, null=True, default=0, help_text='Финансовый вклад в увеличение качества производимых продуктов')
+    quality_increase = models.DecimalField('Увеличение качества производимых продуктов', max_digits=6, decimal_places=4, null=True, default=0)
 
-    class Meta(BaseProductionMinistry.Meta):
+    class Meta(BaseMinistry.Meta):
         ...
 
 
-class MinistryTransport(BaseWorkersMinistry):
+class MinistryTransport(
+    BaseMinistry,
+    ExtendedBaseMinistry,
+    BaseWorkersEquipment,
+    BaseEnergy,
+):
     """Министерство транспорта."""
 
-    ...
+    transport_efficiency_level = models.DecimalField('Уровень транспортной эффективности', max_digits=6, decimal_places=4, null=True, help_text='Уровень транспортной эффективности')
+    transport_efficiency_reduce = models.DecimalField('Снижение уровня транспортной эффективности', max_digits=6, decimal_places=4, null=True)
+    transport_efficiency_goods_contribution = models.IntegerField('Вклад товаров в увеличение транспортной эффективности', null=True, blank=True, default=0, help_text='Вклад товаров в увеличение транспортной эффективности')
+    transport_efficiency_finance_contribution = models.DecimalField('Финансовый вклад в увеличение транспортной эффективности', max_digits=12, decimal_places=2, null=True, default=0)
+    transport_efficiency_increase = models.DecimalField('Увеличение транспортной эффективности', max_digits=6, decimal_places=4, null=True, default=0)
+    transport_environmental_friendliness_level = models.DecimalField('Уровень экологичности транспорта', max_digits=6, decimal_places=4, null=True, help_text='Уровень экологичности транспорта')
+    transport_environmental_friendliness_reduce = models.DecimalField('Снижение уровня экологичности транспорта', max_digits=6, decimal_places=4, null=True)
+    transport_environmental_friendliness_goods_contribution = models.IntegerField('Вклад товаров в увеличение экологичности транспорта', null=True, blank=True, default=0, help_text='Вклад товаров в увеличение экологичности транспорта')
+    transport_environmental_friendliness_finance_contribution = models.DecimalField('Финансовый вклад в увеличение экологичности транспорта', max_digits=12, decimal_places=2, null=True, default=0)
+    transport_environmental_friendliness_increase = models.DecimalField('Увеличение экологичности транспорта', max_digits=6, decimal_places=4, null=True, default=0)
 
-    class Meta(BaseWorkersMinistry.Meta):
+    class Meta(BaseMinistry.Meta):
         ...
 
 
@@ -441,7 +590,7 @@ game_objects_list = [
     General,
     Happiness,
     Safety,
-    Warehouse,
+    Storage,
 
     MinistryPopulation,
     MinistryNaturalResources,
