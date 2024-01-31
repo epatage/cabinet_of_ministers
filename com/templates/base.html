@@ -23,9 +23,9 @@
     </title>
     <style>
       :root {
-        --button-main-color: #7cb2ce;
-        --font-main-color: #012533;
-        --font-main-second-color: #6ca3be;
+        --button-main-color: #fff8f8;
+        --font-main-color: #330006;
+        --font-main-second-color: #cc0000;
         --button-dark-color: #6ca3be;
         --font-dark-color: #012533;
         --nav-link-active-color: #7eb6d3;
@@ -51,24 +51,30 @@
         --bs-nav-pills-link-active-bg: var(--nav-link-active-color);
       }
 
+      {# фоновый рисунок #}
+{#      .first-info{#}
+{#    width: 100%;#}
+{#    height: 300px;#}
+{#    background-image: url( '/static/img/111.jpg' );#}
+
+
     </style>
 </head>
-<body style="background-color: #7cb2ce">
+<body class="fill" style="background-image: url({% static '/img/body_background.png' %})">
   <header class="sticky-top">
       {% include 'includes/header.html' %}
   </header>
   <main >
-    <div class="container" style="background-color: #89beda">
-      {% block content %}
-        Что-то не так... контента нет
-      {% endblock %}
+    <div class="container" >
+      <div class="fill_background_img" style="background-image: url({% static '/img/main_background.png' %}); width: auto; height: 100%; ">
+        {% block content %}
+          Что-то не так... контента нет
+        {% endblock %}
+      </div>
     </div>
   </main>
   <footer>
-    {% comment %}
-      Подвал пока уберем ...
       {% include 'includes/footer.html' %}
-    {% endcomment %}
   </footer>
 </body>
 </html>

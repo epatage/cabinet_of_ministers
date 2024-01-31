@@ -6,21 +6,26 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container ">
-    <form method="post">{% csrf_token %}
-      <div class="container">
-        {{ form.as_p }}
-      </div>
+  <br>
+  <div class="container mb-3" >
+    <form class="form-control translucent_form"  method="post">{% csrf_token %}
+        <br>
+        <div class="row">
+          <div class="col">
+            {{ form }}
+          </div>
 
-      <div class="d-flex justify-content-end" >
-        <button type="submit" class="btn btn-primary">
-            Добавить
-        </button>
-      </div>
+          <div class="col d-flex justify-content-end" >
+            <button type="submit" class="btn btn-primary btn-main">
+                Начать игру
+            </button>
+          </div>
+        </div>
+      <br>
     </form>
   </div>
 
-  <h3>Последние завершенные игры.</h3>
+  <h3><span class="font-bordo">Последние завершенные игры</span></h3>
   <hr>
   <div class="container">
     {% for game in games %}

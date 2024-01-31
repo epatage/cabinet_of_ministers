@@ -10,45 +10,6 @@ from users.models import User
 from games.exceptions import ConstantException
 
 
-#
-# class Period(models.Model):
-#     """
-#     Модель периода (игрового года).
-#
-#     Сочетание объекта игры к которому относиться период
-#     и номера периода должно быть уникальным.
-#     """
-#
-#     game = models.ForeignKey(
-#         'Game',
-#         blank=False,
-#         null=False,
-#         on_delete=models.CASCADE,
-#         related_name='periods',
-#         verbose_name='Годовой период',
-#         help_text='Годовой период',
-#     )
-#     number = models.PositiveSmallIntegerField('Номер периода', default=0, null=False, blank=False)
-#
-#     # class Meta:
-#     #     constraints = [
-#     #         models.UniqueConstraint(
-#     #             fields=['game', 'number'],
-#     #             name='unique_game_number'
-#     #         )
-#     #     ]
-#
-#     def __str__(self):
-#         return f'{self.game.country_name} - {self.number}'
-
-
-# class Welfare(models.Model):
-#     """Благосостояние населения."""
-#
-#     welfare_level = models.DecimalField('Уровень благосостояния', max_digits=5, decimal_places=3, null=True, blank=True)
-#     general = models.OneToOneField('General', verbose_name='Общие показатели', on_delete=models.CASCADE, null=False, blank=False)
-
-
 class Welfare(models.Model):
     """
     Уровень благосостояния населения по группам.
@@ -129,7 +90,7 @@ class General(models.Model):
         if created:
             try:
                 # Берем список групп населения из модуля константы
-                groups: list = const.population_groups
+                groups: list = const.POPULATION_GROUPS
             except AttributeError as err:
                 # Сделать логирование ошибки <--
                 raise ConstantException(f'Ошибка {err}')
@@ -252,37 +213,69 @@ class Workers(models.Model):
 
 
 class Storage(models.Model):
-    """Хранилище финансов и материальных запасов."""
+    """
+    Хранилище.
 
-    # Переделывать!
+    Хранение и оборот материальных ресурсов.
+    """
 
-    game = models.ForeignKey(
-        'Game',
+    title = models.CharField('Название ресурса', max_length=255, null=False, help_text='Название ресурса')
+    amount = models.IntegerField('Количество', null=True, blank=True, default=0, help_text='Количество')
+    quality = models.DecimalField('Качество', max_digits=6, decimal_places=4, null=True, blank=True, help_text='Качество')
+    avg_price = models.DecimalField('Цена за единицу', max_digits=12, decimal_places=2, null=True, blank=True, help_text='Цена за единицу')
+    min_finance = models.ForeignKey(
+        'MinistryFinance',
         blank=False,
         null=False,
         on_delete=models.CASCADE,
-        related_name='warehouses',
-        verbose_name='Игра',
-        help_text='Игра',
+        related_name='storages',
+        verbose_name='Хранилище ресурсов',
+        help_text='Хранилище ресурсов',
     )
-    period = models.PositiveSmallIntegerField('Период', null=False, blank=False)
-    title = models.CharField('Название', max_length=50, null=False, blank=False)
-    amount = models.IntegerField('Количество', null=False, blank=True, default=0)
-    avg_price = models.DecimalField('Цена за единицу', max_digits=5, decimal_places=2, null=True, blank=True)
-    quality = models.DecimalField('Качество', max_digits=5, decimal_places=2, null=True, blank=True)
-    amount_finance = models.DecimalField('Финансовый параметр', max_digits=12, decimal_places=2, null=True, blank=True)
-    remaining_resources = models.PositiveIntegerField('Остаток ресурсов', default=1000000)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['game', 'period', 'title'],
-                name='%(class)s_unique_game_period_title'
+                fields=['min_finance', 'title'],
+                name='storage_unique_min_finance_title'
             )
         ]
 
     def __str__(self):
-        return f'{self.game.country_name} - {self.period} - {self.title}'
+        return f'{self.min_finance.game.country_name} - {self.min_finance.period} - {self.title}'
+
+
+class ExternalMarket(models.Model):
+    """
+    Внешний рынок.
+
+    Приобретение и продажа ресурсов на внешнем рынке.
+    """
+
+    title = models.CharField('Название ресурса', max_length=255, null=False, help_text='Название ресурса')
+    amount = models.IntegerField('Количество', null=True, blank=True, default=0, help_text='Количество')
+    quality = models.DecimalField('Качество', max_digits=6, decimal_places=4, null=True, blank=True, help_text='Качество')
+    avg_price = models.DecimalField('Цена за единицу', max_digits=12, decimal_places=2, null=True, blank=True, help_text='Цена за единицу')
+    min_finance = models.ForeignKey(
+        'MinistryFinance',
+        blank=False,
+        null=False,
+        on_delete=models.CASCADE,
+        related_name='external_markets',
+        verbose_name='Внешний рынок',
+        help_text='Внешний рынок',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['min_finance', 'title'],
+                name='external_markets_unique_min_finance_title'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.min_finance.game.country_name} - {self.min_finance.period} - {self.title}'
 
 
 class BaseMinistry(models.Model):
@@ -460,7 +453,7 @@ class MinistryPopulation(
         if created:
             try:
                 # Берем список групп рабочих из модуля константы
-                groups: list = const.workers_groups
+                groups: tuple = const.WORKERS_GROUPS
             except AttributeError as err:
                 # Сделать логирование ошибки <--
                 raise ConstantException(f'Ошибка {err}')
@@ -579,18 +572,40 @@ class MinistryTransport(
 class MinistryFinance(BaseMinistry):
     """Министерство финансов."""
 
-    money = models.DecimalField(verbose_name='Финансы', max_digits=12, decimal_places=2, null=False, default=0)
+    money = models.DecimalField('Финансы', max_digits=12, decimal_places=2, null=True, default=0)
+    total_costs = models.DecimalField('Суммарные затраты', max_digits=12, decimal_places=2, null=True, default=0)
+    total_income = models.DecimalField('Суммарные доходы', max_digits=12, decimal_places=2, null=True, default=0)
+    credit = models.DecimalField('Кредит', max_digits=12, decimal_places=2, null=True, default=0)
+    credit_take = models.DecimalField('Взять кредит', max_digits=12, decimal_places=2, null=True, blank=True, default=0, help_text='Взять кредит')
+    credit_return = models.DecimalField('Возврат долга', max_digits=12, decimal_places=2, null=True, blank=True, default=0, help_text='Возврат долга')
+    credit_interest = models.DecimalField('Проценты по кредиту', max_digits=12, decimal_places=2, null=True, default=0, help_text='Проценты по кредиту')
 
     class Meta(BaseMinistry.Meta):
-        ordering = ['period']
+        ...
+
+    def save(self, *args, **kwargs):
+        created = self.pk is None
+        super().save(*args, **kwargs)
+
+        if created:
+            try:
+                # Берем список объектов хранилища из модуля константы
+                storage_objects: tuple = const.STORAGE_OBJECTS
+            except AttributeError as err:
+                # Сделать логирование ошибки <--
+                raise ConstantException(f'Ошибка {err}')
+
+            # Создаем таблицы для ресурсов и их перемещения в/из хранилища
+            for obj in storage_objects:
+                Storage.objects.create(min_finance=self, title=obj)
 
 
 """Список объектов создаваемых при создании игры"""
-game_objects_list = [
+game_objects_list = (
     General,
     Happiness,
     Safety,
-    Storage,
+    # Storage, # Создается при создании объектов министерства финансов
 
     MinistryPopulation,
     MinistryNaturalResources,
@@ -599,7 +614,7 @@ game_objects_list = [
     MinistryAgriculture,
     MinistryTransport,
     MinistryFinance,
-]
+)
 
 
 class Game(models.Model):
@@ -647,7 +662,7 @@ class Game(models.Model):
         if created:
             try:
                 # Количество периодов включает стартовый (нулевой) период
-                periods: int = const.periods + 1
+                periods: int = const.PERIODS + 1
             except AttributeError as err:
                 periods: int = self.max_periods + 1
 

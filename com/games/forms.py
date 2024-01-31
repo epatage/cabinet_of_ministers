@@ -14,6 +14,12 @@ class GameCreateForm(forms.ModelForm):
         labels = {
             'country_name': 'Название государства',
         }
+        widgets = {
+            'country_name': forms.TextInput(attrs={
+                'class': 'form-control-sm',
+                'style': 'width: 250px',
+                'placeholder': 'Российская Федерация'
+            })}
 
 
 class ExtendedBaseMinistryForm(forms.ModelForm):
@@ -280,6 +286,16 @@ class MinistryFinanceForm(forms.ModelForm):
         model = MinistryFinance
         fields = '__all__'
         exclude = ('game', 'period')
+
+    def clean_money(self):
+        """Для тестирования работы вью-класса."""
+
+        data = self.cleaned_data['money']
+
+        if data > 10:
+            raise forms.ValidationError('Неверное число !!')
+
+        return data
 
 
 class WorkersForm(forms.ModelForm):
